@@ -1,5 +1,5 @@
 # Challenge
-The challenge is create a Kubernetes cluster with this example application from Juro Baixo. The tools used was prometheus and grafana to show a dashboard with some metrics.
+The challenge is create a Kubernetes cluster with this example application from Juros Baixo. The tools used was prometheus and grafana to show a dashboard with some metrics.
 
 ## Architecture
 
