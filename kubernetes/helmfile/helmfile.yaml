@@ -1,0 +1,134 @@
+environments:
+  dev:
+    values:
+      - env: dev
+      - name: challenger
+
+repositories:
+  - name: "ingress-nginx"
+    url: "https://kubernetes.github.io/ingress-nginx"
+  - name: "bitnami"
+    url: "https://charts.bitnami.com/bitnami"
+  - name: "grafana"
+    url: "https://grafana.github.io/helm-charts"
+  - name: "prometheus-community"
+    url: "https://prometheus-community.github.io/helm-charts"
+
+releases:
+  - name: prometheus
+    namespace: monitoring
+    chart: prometheus-community/prometheus
+    needs:
+      - application/{{ .Values.name }}
+    values:
+      - baseURL: "http://localhost"
+      - serverFiles:
+          prometheus.yml:
+            scrape_configs:
+              - job_name: {{ .Values.name }}
+                static_configs:
+                  - targets: ['{{ .Values.name }}-jb-fizzbuzz-metrics.application.svc:8080']
+
+      - server:
+          ingress:
+            enabled: true
+            annotations:
+              kubernetes.io/ingress.class: "nginx"
+              nginx.ingress.kubernetes.io/rewrite-target: /$2
+            path: /prometheus(/|$)(.*)
+            hosts:
+              - "" # used for wildcard of the ALB and subscribe default value chart-example.local
+
+  - name: grafana
+    namespace: monitoring
+    chart: grafana/grafana
+    needs:
+      - monitoring/prometheus
+      - monitoring/dashboards
+      - application/{{ .Values.name }}
+    values:
+      - sidecar:
+          dashboard:
+            enable: true
+            label: grafana_dashboard
+      - datasources:
+          datasources.yaml:
+            apiVersion: 1
+            datasources:
+            - name: Prometheus
+              type: prometheus
+              access: proxy
+              orgId: 1
+              url: http://prometheus-server.monitoring.svc
+              editable: false
+      - ingress:
+          enabled: true
+          annotations:
+            kubernetes.io/ingress.class: "nginx"
+            nginx.ingress.kubernetes.io/rewrite-target: /$1
+            nginx.ingress.kubernetes.io/use-regex: "true"
+          path: /grafana/?(.*)
+          hosts:
+            - "" # used for wildcard of the ALB and subscribe default value chart-example.local
+      - grafana.ini:
+          server:
+            root_url: http://localhost:3000/grafana
+      - dashboardsConfigMaps:
+          challenger: dashboards
+      - dashboardProviders:
+          challenger.yaml:
+            apiVersion: 1
+            providers:
+              - name: challenger
+                orgId: 1
+                folder: 'challenger'
+                type: file
+                disableDeletion: false
+                editable: true
+                options:
+                  path: /var/lib/grafana/dashboards/challenger/
+
+  - name: metric-server
+    namespace: kube-system
+    chart: bitnami/metrics-server
+    wait: true
+    values:
+      - apiService:
+          create: true
+
+  - name: public
+    namespace: "nginx-ingress"
+    chart: ingress-nginx/ingress-nginx
+    wait: true
+    values:
+      - extraArgs:
+          enable-ssl-passthrough: ""
+      - rbac:
+          create: true
+      - controller:
+          name: "jb-alb-public"
+          ingressClassResource:
+            name: public
+          replicaCount: 2
+          service:
+            type: LoadBalancer
+            omitClusterIP: true
+            annotations:
+              service.beta.kubernetes.io/aws-load-balancer-type: nlb
+          publishService:
+            enabled: true
+
+  # chart fizzbuzz
+  - name: {{ .Values.name }}
+    chart: ../charts/jb-fizzbuzz
+    namespace: application
+    needs:
+      - nginx-ingress/public
+
+  # chart dashboards grafana
+  - name: dashboards
+    chart: ../charts/dashboards
+    namespace: monitoring
+    needs:
+      - application/{{ .Values.name }}
+      - nginx-ingress/public

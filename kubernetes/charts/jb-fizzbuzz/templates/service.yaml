@@ -1,0 +1,15 @@
+{{- $release := .Release.Name }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "jb-fizzbuzz.fullname" . }}-metrics
+  labels:
+    {{- include "jb-fizzbuzz.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: 8080
+      targetPort: metric-port
+  selector:
+    app.kubernetes.io/name: {{ include "jb-fizzbuzz.fullname" . }}-metrics
+    app.kubernetes.io/instance: {{ $release }}
