@@ -1,9 +1,9 @@
-# Challenger
-The challenger is create cluster Kubernetes deployment with this example application of the Juro Baixo, used prometheus and grafana and show some statistics
+# Challenge
+The challenge is create a Kubernetes cluster with this example application from Juro Baixo. The tools used was prometheus and grafana to show a dashboard with some metrics.
 
 ## Architecture
 
-The infrastructure contains cluster Kubernetes(EKS) with one instance on demand and two instances spot, too NAT Gateway just one public subnet and created Network load balance for access cluster Kubernetes
+The infrastructure contains a Kubernetes(EKS) cluster with one instance on demand and two instances spot, also a NAT Gateway with one public subnet and a load balance network to access the cluster.
 
 **Used:**
 - Terraform v0.14.4
@@ -12,7 +12,7 @@ The infrastructure contains cluster Kubernetes(EKS) with one instance on demand 
 
 ## Kubernetes
 
-For installed grafana, prometheus, jb-fizzbuzz and nginx-ingress(NLB) i used helmfile. Helmfile is a declarative spec for deploying helm charts
+To install grafana, prometheus, jb-fizzbuzz and nginx-ingress(NLB) I used helmfile. Helmfile is a declarative spec for deploying helm charts
 
 **Used:**
 - Helm v3.6.3
@@ -23,20 +23,27 @@ For installed grafana, prometheus, jb-fizzbuzz and nginx-ingress(NLB) i used hel
 ## Getting started
 
 The requirements are:
-- docker
+- Docker
 
-1 - For create cluster
+Then, we need to set a few variables for Terraform:
+
+```
+export AWS_ACCESS_KEY_ID=<YOUR_AWS_ACCESS_KEY_ID>
+export AWS_SECRET_ACCESS_KEY=<YOUR_AWS_SECRET_ACCESS_KEY>
+```
+
+1 - Cluster creation
 ```
 make apply
 ```
 
-2- Get URL and password for login grafana:
+2- Get URL and password for grafana login:
 
 ```
 make grafana
 ```
 
-3 - For destroy cluster
+3 - Destroy cluster
 ```
 make destroy
 ```

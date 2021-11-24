@@ -66,3 +66,11 @@ grafana:
 		${DOCKER_REPO}:${DOCKER_TAG} \
 		ash -c "kubectl get secret --namespace monitoring grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo")
 	$(info $(PASSWORD))
+
+helmfile:
+	@docker run -it --rm -v $(PROJECT_DIR):/usr/src \
+		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+		-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+		-e KUBECONFIG=/usr/src/infrastructure/eks/outputs/kubeconfig \
+		${DOCKER_REPO}:${DOCKER_TAG} \
+		ash -c "helmfile --file kubernetes/helmfile/helmfile.yaml --log-level=debug --environment dev sync"
